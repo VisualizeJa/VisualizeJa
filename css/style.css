@@ -1,0 +1,204 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  display: flex;
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+/* Sidebar */
+aside {
+  width: 220px;
+  background-color: #1e3a8a;
+  height: 100vh;
+  padding: 20px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 40px;
+}
+
+.logo span {
+  color: #10b981;
+}
+
+nav button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  padding: 12px 15px;
+  text-align: left;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+nav button:hover,
+nav button.active {
+  background-color: #2563eb;
+}
+
+/* Main content */
+main {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.tab-content {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Tabela Base */
+#tabelaDados {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+#tabelaDados th,
+#tabelaDados td {
+  border: 1px solid #d1d5db;
+  padding: 10px;
+  text-align: left;
+}
+
+#tabelaDados th {
+  background-color: #f9fafb;
+  font-weight: 600;
+}
+
+/* Tipo de coluna */
+#tipoColunas select {
+  padding: 5px 8px;
+  margin-left: 5px;
+  border-radius: 6px;
+}
+
+/* Botões gerais */
+button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 5px;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+button[onclick*="criarNovoGrafico"] {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+button[onclick*="limparGraficos"] {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+button[onclick*="exportarPDF"] {
+  background-color: #10b981;
+  color: #fff;
+}
+
+#filtroBox select,
+#filtroBox input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-right: 10px;
+}
+
+#filtroBox button {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+#filtroBox button:hover {
+  background-color: #d1d5db;
+}
+
+/* Área dos Gráficos */
+#areaGraficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+/* Bloco de gráfico */
+.grafico-bloco {
+  background-color: #f9fafb;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  position: relative;
+}
+
+.grafico-bloco .fechar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.grafico-bloco select,
+.grafico-bloco button {
+  margin-right: 6px;
+  margin-top: 10px;
+}
+
+/* Cartões */
+.cartoes {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.cartao {
+  background-color: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
