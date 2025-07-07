@@ -1,303 +1,209 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VisualizeJá</title>
+  <title>VisualizeJá - Dashboard</title>
+  <link rel="stylesheet" href="css/style-dashboard.css" />
+  <link rel="stylesheet" href="css/style.home.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <aside>
-    <div class="logo">Visualize<span>Já</span></div>
-    <nav>
-      <button class="tablink active" data-tab="upload">📁 Upload</button>
-      <button class="tablink" data-tab="base">📄 Base de Dados</button>
-      <button class="tablink" data-tab="dashboard">📊 Dashboard</button>
-    </nav>
-  </aside>
+<header>
+  <a href="index.html" class="btn-voltar">← Voltar para Início</a>
+  <div class="logo">Visualize<span style="color:#10B981">Já</span></div>
+  <nav class="menu">
+    <a href="#" data-aba="upload">📁 Upload</a>
+    <a href="#" data-aba="base">📊 Base de Dados</a>
+    <a href="#" data-aba="dashboard">📈 Dashboard</a>
+  </nav>
+  <button id="toggleTheme" class="btn-tema">🌙</button>
+</header>
 
-  <main>
-    <!-- Upload -->
-    <section id="upload" class="tab active tab-content">
-      <h2>📁 Upload de Arquivo</h2>
-      <input type="file" id="fileInput" accept=".xlsx,.csv" />
-      <button id="inserirManual">Inserir Manualmente</button>
-      <div id="uploadStatus"></div>
-    </section>
+<main>
+  <!-- Upload -->
+  <section id="upload" class="aba ativa">
+    <h2>📁 Upload de Arquivo</h2>
+    <input type="file" id="inputExcel" accept=".xlsx, .xls" />
+    <p>Ou <button onclick="inserirBaseExemplo()">Usar base de exemplo</button></p>
+  </section>
 
-    <!-- Base -->
-    <section id="base" class="tab tab-content">
-      <h2>📄 Base de Dados</h2>
-      <div id="tipoColunas" style="margin-bottom:10px;"></div>
-      <div id="tabelaBase"><p>Nenhum dado ainda.</p></div>
-    </section>
-
-    <!-- Dashboard -->
-    <section id="dashboard" class="tab tab-content">
-      <h2>📊 Dashboard</h2>
-
-      <div id="filtroBox">
-        <label><b>🔽 Filtrar por:</b></label>
-        <select id="colunaFiltro"></select>
-        <input type="text" id="valorFiltro" placeholder="Valor..." />
-        <button onclick="aplicarFiltro()">🔍 Aplicar Filtro</button>
-        <button onclick="limparFiltro()">❌ Limpar</button>
-      </div>
-
-      <div style="margin-top: 20px;">
-        <button onclick="criarNovoGrafico()">➕ Adicionar Gráfico</button>
-        <button onclick="limparGraficos()">🧹 Limpar Todos</button>
-        <button onclick="exportarPDF()">📄 Exportar PDF</button>
-      </div>
-
-      <div id="areaGraficos"></div>
-    </section>
-  </main>
-
-<script>
-// Troca de abas
-document.querySelectorAll(".tablink").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-    document.querySelectorAll(".tablink").forEach(b => b.classList.remove("active"));
-    document.getElementById(btn.dataset.tab).classList.add("active");
-    btn.classList.add("active");
-  });
-});
-
-// Upload
-document.getElementById("fileInput").addEventListener("change", e => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const data = e.target.result;
-      const workbook = XLSX.read(data, { type: "binary" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      carregarTabela(json);
-      document.getElementById("uploadStatus").innerText = "✅ Arquivo carregado com sucesso!";
-    } catch {
-      document.getElementById("uploadStatus").innerText = "❌ Erro ao carregar.";
-    }
-  };
-  reader.readAsBinaryString(file);
-});
-
-document.getElementById("inserirManual").addEventListener("click", () => {
-  const exemplo = [["Produto", "Categoria", "Valor"], ["Arroz", "Alimento", 10], ["Feijão", "Alimento", 20], ["Sabão", "Limpeza", 8]];
-  carregarTabela(exemplo);
-  document.getElementById("uploadStatus").innerText = "✅ Exemplo carregado!";
-});
-
-// Base
-function carregarTabela(dados) {
-  const tabela = document.createElement("table");
-  tabela.id = "tabelaDados";
-  dados.forEach((linha, i) => {
-    const tr = document.createElement("tr");
-    linha.forEach(cell => {
-      const cel = document.createElement(i === 0 ? "th" : "td");
-      cel.textContent = cell;
-      if (i !== 0) cel.contentEditable = true;
-      tr.appendChild(cel);
-    });
-    tabela.appendChild(tr);
-  });
-  document.getElementById("tabelaBase").innerHTML = "";
-  document.getElementById("tabelaBase").appendChild(tabela);
-  criarTipoColunas(dados[0]);
-  atualizarSelects();
-}
-
-function criarTipoColunas(headers) {
-  const container = document.getElementById("tipoColunas");
-  let html = "<div style='margin:10px 0; font-weight:600;'>🧠 Tipo de cada coluna: ";
-  headers.forEach(h => {
-    html += `
-      <label style="margin-right:10px;">
-        ${h}:
-        <select class="tipo-coluna" data-coluna="${h}">
-          <option value="texto">Texto</option>
-          <option value="numero">Número</option>
-          <option value="decimal">Decimal</option>
-          <option value="moeda">Moeda</option>
-          <option value="data">Data</option>
-        </select>
-      </label>
-    `;
-  });
-  html += "</div>";
-  container.innerHTML = html;
-}
-
-function atualizarSelects() {
-  const headers = Array.from(document.querySelectorAll("#tabelaDados th")).map(th => th.innerText);
-  document.querySelectorAll(".grafico-bloco").forEach(bloco => {
-    const selX = bloco.querySelector(".select-x");
-    const selY = bloco.querySelector(".select-y");
-    if (selX && selY) {
-      selX.innerHTML = headers.map(h => `<option>${h}</option>`).join("");
-      selY.innerHTML = headers.map(h => `<option>${h}</option>`).join("");
-    }
-  });
-  document.getElementById("colunaFiltro").innerHTML = headers.map(h => `<option>${h}</option>`).join("");
-}
-
-// Filtro
-let filtroAtivo = null;
-function aplicarFiltro() {
-  const col = document.getElementById("colunaFiltro").value;
-  const val = document.getElementById("valorFiltro").value.toLowerCase();
-  if (col && val) {
-    filtroAtivo = { col, val };
-    document.querySelectorAll(".grafico-bloco button[onclick*='gerarGrafico']").forEach(btn => btn.click());
-  }
-}
-function limparFiltro() {
-  filtroAtivo = null;
-  document.getElementById("valorFiltro").value = "";
-  document.querySelectorAll(".grafico-bloco button[onclick*='gerarGrafico']").forEach(btn => btn.click());
-}
-
-// Dashboard
-function limparGraficos() {
-  document.getElementById("areaGraficos").innerHTML = "";
-}
-function criarNovoGrafico() {
-  const container = document.getElementById("areaGraficos");
-  const id = "grafico_" + Date.now();
-  const bloco = document.createElement("div");
-  bloco.className = "grafico-bloco";
-  bloco.innerHTML = `
-    <button class="fechar" onclick="this.parentElement.remove()">×</button>
-    <div style="margin-bottom: 10px;">
-      <label><b>X:</b></label>
-      <select class="select-x"></select>
-      <label><b>Y:</b></label>
-      <select class="select-y"></select>
-      <label><b>Tipo:</b></label>
-      <select class="select-tipo">
-        <option value="bar">Barra</option>
-        <option value="line">Linha</option>
-        <option value="pie">Pizza</option>
+  <!-- Base de Dados -->
+  <section id="base" class="aba">
+    <h2>📊 Base de Dados</h2>
+    <div class="coluna-selecionada-box">
+      <label for="selecionarColuna">🎯 Coluna Selecionada:</label>
+      <select id="selecionarColuna" onchange="selecionarColunaManual(this.value)">
+        <option value="">-- Selecione uma coluna --</option>
       </select>
-      <button onclick="gerarGrafico('${id}', this)">Gerar</button>
-      <button onclick="exportarGrafico('${id}')">📤 Exportar</button>
     </div>
-    <div id="${id}" style="width:100%; height:300px;"></div>
-    <div class="cartoes"></div>
-  `;
-  container.appendChild(bloco);
-  atualizarSelects();
-}
 
-function gerarGrafico(id, btn) {
-  const bloco = btn.closest(".grafico-bloco");
-  const tabela = document.getElementById("tabelaDados");
-  const headers = Array.from(tabela.rows[0].cells).map(th => th.innerText);
-  const x = bloco.querySelector(".select-x").value;
-  const y = bloco.querySelector(".select-y").value;
-  const tipo = bloco.querySelector(".select-tipo").value;
-  const xIdx = headers.indexOf(x);
-  const yIdx = headers.indexOf(y);
-  const dados = [];
+    <div class="menu-transformacoes-horizontal">
+      <label>🧠 Tipo de dado:</label>
+      <select id="tipoDado">
+        <option value="">-- Selecione --</option>
+        <option value="moeda">Moeda</option>
+        <option value="peso">Peso</option>
+        <option value="data">Data</option>
+        <option value="percentual">Percentual</option>
+      </select>
 
-  for (let i = 1; i < tabela.rows.length; i++) {
-    const row = tabela.rows[i];
-    const cat = row.cells[xIdx]?.innerText;
-    const val = parseFloat(row.cells[yIdx]?.innerText.replace(",", "."));
-    if (cat && !isNaN(val)) {
-      const linha = Object.fromEntries(headers.map((h, j) => [h, row.cells[j]?.innerText.toLowerCase()]));
-      if (!filtroAtivo || linha[filtroAtivo.col]?.includes(filtroAtivo.val)) {
-        dados.push({ cat, val });
-      }
+      <label>⚙️ Opções:</label>
+      <select id="campoExtra">
+        <option>Selecione um tipo</option>
+      </select>
+
+      <button onclick="arredondarColuna()">🔢 Arredondar</button>
+      <button onclick="aplicarTransformacao()">📅 Aplicar</button>
+      <button onclick="abrirSubstituir()">🔄 Substituir</button>
+      <button onclick="limparSelecaoManual()">❌ Limpar Seleção</button>
+      <button onclick="exportarExcel()">📤 Exportar Excel</button>
+      <button onclick="desfazerTransformacoes()">↩️ Desfazer</button>
+    </div>
+
+    <div class="menu-transformacoes-horizontal">
+      <button onclick="adicionarLinha()">➕ Linha</button>
+      <button onclick="removerLinhaSelecionada()">❌ Linha</button>
+      <button onclick="adicionarColuna()">➕ Coluna</button>
+      <button onclick="removerColunaSelecionada()">❌ Coluna</button>
+    </div>
+
+    <div class="filtro-box">
+      <select id="colunaFiltro"></select>
+      <input id="valorFiltro" placeholder="Filtrar valor..." />
+      <button onclick="aplicarFiltro()">Filtrar</button>
+      <button onclick="limparFiltro()">Limpar</button>
+    </div>
+
+    <div class="tabela-container">
+      <table id="tabela-dinamica">
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody-dados"></tbody>
+      </table>
+    </div>
+
+    <div id="painelEstatisticas" class="painel-estatisticas"></div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard" class="aba">
+    <h2>📈 Dashboard</h2>
+    <div class="painel-config-graficos">
+      <select id="tipoGrafico">
+        <button onclick="desfazerUltimoGrafico()" class="btn-desfazer">↩️ Desfazer</button>
+
+        <option value="bar">📊 Barras</option>
+        <option value="line">📈 Linha</option>
+        <option value="pie">🥧 Pizza</option>
+        <option value="scatter">🔵 Dispersão</option>
+        <option value="radar">🕸️ Radar</option>
+        <option value="area">🏔️ Área</option>
+      </select>
+
+      <select id="colunaX"></select>
+      <select id="colunaY"></select>
+
+      <select id="tipoAgregacao">
+        <option value="Soma">➕ Soma</option>
+        <option value="Média">⚖️ Média</option>
+        <option value="Contagem">🔢 Contagem</option>
+        <option value="Máximo">🔼 Máximo</option>
+        <option value="Mínimo">🔽 Mínimo</option>
+      </select>
+   <button onclick="desfazerUltimoGrafico()" class="btn-desfazer">↩️ Desfazer</button>
+      <button onclick="criarPainelGrafico()">➕ Criar Gráfico</button>
+      <button onclick="criarCartaoIndicador()">📌 Adicionar Cartão</button>
+    </div>
+
+    <div id="area-graficos" class="area-graficos" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+  </section>
+</main>
+
+<!-- Modal Substituir -->
+<div id="modalSubstituir" class="modal">
+  <div class="modal-conteudo">
+    <h3>🔄 Substituir valor</h3>
+    <label>Coluna:</label>
+    <select id="colunaSubstituir"></select>
+    <label>De:</label>
+    <input type="text" id="valorDe" />
+    <label>Para:</label>
+    <input type="text" id="valorPara" />
+    <div class="modal-botoes">
+      <button onclick="aplicarSubstituicao()">✅ Aplicar</button>
+      <button onclick="fecharSubstituir()">❌ Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Painel lateral correto -->
+<div id="painelConfiguracao" class="painel-lateral" style="display:none">
+  <h3>⚙️ Configurar Gráfico</h3>
+
+  <label>Título:</label>
+  <input type="text" id="editTitulo" />
+
+  <label>Tipo de Gráfico:</label>
+  <select id="editTipoGrafico">
+    <option value="bar">📊 Barras</option>
+    <option value="line">📈 Linha</option>
+    <option value="pie">🥧 Pizza</option>
+    <option value="scatter">🔵 Dispersão</option>
+    <option value="radar">🕸️ Radar</option>
+    <option value="area">🏔️ Área</option>
+  </select>
+
+  <label>Eixo X:</label>
+  <select id="editColunaX"></select>
+
+  <label>Eixo Y:</label>
+  <select id="editColunaY"></select>
+
+  <label>Agregação:</label>
+  <select id="editAgregacao">
+    <option value="Soma">➕ Soma</option>
+    <option value="Média">⚖️ Média</option>
+    <option value="Contagem">🔢 Contagem</option>
+    <option value="Máximo">🔼 Máximo</option>
+    <option value="Mínimo">🔽 Mínimo</option>
+  </select>
+
+  <hr>
+
+  <label>🎨 Cor do Gráfico:</label>
+  <input type="color" id="editCorGrafico" value="#3B82F6" />
+
+  <label>🔠 Cor do Título:</label>
+  <input type="color" id="editCorTitulo" value="#FFFFFF" />
+
+  <label>🔠 Tamanho do Título:</label>
+  <input type="number" id="editTamanhoTitulo" value="16" min="10" max="36" />
+
+  <label>🔤 Cor dos Rótulos:</label>
+  <input type="color" id="editCorRotulo" value="#FFFFFF" />
+
+  <label>🔤 Tamanho dos Rótulos:</label>
+  <input type="number" id="editTamanhoRotulo" value="12" min="8" max="24" />
+
+  <br><br>
+  <button onclick="aplicarConfiguracaoGrafico()" class="btn-aplicar">Aplicar</button>
+  <button onclick="fecharPainelConfiguracao()" class="btn-fechar">Fechar</button>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/upload.js"></script>
+<script src="js/base.js"></script>
+<script src="js/dashboard.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof atualizarColunasDashboard === "function") {
+      atualizarColunasDashboard();
     }
-  }
-
-  const agrupado = {};
-  dados.forEach(d => agrupado[d.cat] = (agrupado[d.cat] || 0) + d.val);
-  const categorias = Object.keys(agrupado);
-  const valores = Object.values(agrupado);
-
-  const chart = echarts.init(document.getElementById(id));
-  let option;
-  if (tipo === "pie") {
-    option = {
-      tooltip: { trigger: 'item' },
-      series: [{
-        type: 'pie',
-        data: categorias.map((c, i) => ({ name: c, value: valores[i] })),
-        label: { show: true, formatter: '{b}: {d}%' }
-      }]
-    };
-  } else {
-    option = {
-      tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: categorias },
-      yAxis: { type: 'value' },
-      series: [{
-        data: valores,
-        type: tipo,
-        label: { show: true, position: 'top' },
-        itemStyle: { color: '#3b82f6' }
-      }]
-    };
-  }
-  chart.setOption(option);
-
-  const total = valores.reduce((a, b) => a + b, 0);
-  const media = (total / valores.length).toFixed(2);
-  const max = Math.max(...valores);
-  const min = Math.min(...valores);
-  const mediana = calcularMediana(valores);
-  const contagem = valores.length;
-
-  bloco.querySelector(".cartoes").innerHTML = `
-    <div class="cartao">🔢 Total: ${total}</div>
-    <div class="cartao">📊 Média: ${media}</div>
-    <div class="cartao">🔼 Máx: ${max}</div>
-    <div class="cartao">🔽 Mín: ${min}</div>
-    <div class="cartao">➗ Mediana: ${mediana}</div>
-    <div class="cartao">📦 Registros: ${contagem}</div>
-  `;
-}
-
-function calcularMediana(valores) {
-  const sorted = [...valores].sort((a, b) => a - b);
-  const meio = Math.floor(sorted.length / 2);
-  return (sorted.length % 2 === 0)
-    ? ((sorted[meio - 1] + sorted[meio]) / 2).toFixed(2)
-    : sorted[meio].toFixed(2);
-}
-
-function exportarGrafico(id) {
-  const chart = echarts.getInstanceByDom(document.getElementById(id));
-  const img = chart.getDataURL({ type: 'png' });
-  const a = document.createElement('a');
-  a.href = img;
-  a.download = 'grafico.png';
-  a.click();
-}
-
-async function exportarPDF() {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  const blocos = document.querySelectorAll(".grafico-bloco");
-  for (let i = 0; i < blocos.length; i++) {
-    const canvas = blocos[i].querySelector("canvas");
-    if (canvas) {
-      const imgData = canvas.toDataURL("image/png");
-      if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, "PNG", 10, 10, 190, 100);
-    }
-  }
-  pdf.save("dashboard.pdf");
-}
+  });
 </script>
 </body>
 </html>
